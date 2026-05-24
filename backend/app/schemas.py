@@ -1,3 +1,4 @@
+from enum import Enum
 from datetime import date, datetime
 from typing import Optional
 
@@ -31,18 +32,28 @@ class PatientResponse(PatientBase):
     class Config:
         from_attributes = True
 
+class AppointmentStatus(str, Enum):
+    pending = "pending"
+    in_progress = "in_progress"
+    completed = "completed"
+    cancelled = "cancelled"
 
 class AppointmentBase(BaseModel):
     patient_id: int
     service_type: str
     professional_name: str
-    status: str = "pending"
+    status: AppointmentStatus = AppointmentStatus.pending
     notes: Optional[str] = None
 
 
 class AppointmentCreate(AppointmentBase):
     pass
 
+class AppointmentUpdate(BaseModel):
+    service_type: Optional[str] = None
+    professional_name: Optional[str] = None
+    status: Optional[AppointmentStatus] = None
+    notes: Optional[str] = None
 
 class AppointmentResponse(AppointmentBase):
     id: int

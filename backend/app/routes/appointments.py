@@ -5,7 +5,11 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Appointment, Patient
-from app.schemas import AppointmentCreate, AppointmentResponse
+from app.schemas import (
+    AppointmentCreate, 
+    AppointmentResponse,
+    AppointmentUpdate
+)
 
 
 router = APIRouter(
@@ -85,5 +89,38 @@ def get_appointment_by_id(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Atendimento não encontrado."
         )
+
+    return appointment
+
+@router.put(
+    "/{appointment_id}",
+    response_model=AppointmentResponse
+)
+
+def update_appointment(
+    appointment_id: int,
+    appointment_data: AppointmentUpdate,
+    db: Session = Depends(get_db)
+):
+    appointment = db.query(Appointment).filter(
+        Appointment.id == appointment_id
+    ).first()
+
+    if not appointment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Atendimento não encontrado."
+        )
+
+    update_data = appointment_data.model_dump(
+        exclude_unset=True
+    )
+
+    for field, value in update_data.items():
+        setattr(appointment, field, value)
+
+    db.commit()
+
+    db.refresh(appointment)
 
     return appointment
