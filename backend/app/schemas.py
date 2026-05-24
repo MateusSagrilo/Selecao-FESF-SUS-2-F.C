@@ -16,6 +16,13 @@ class PatientBase(BaseModel):
 class PatientCreate(PatientBase):
     pass
 
+class PatientUpdate(BaseModel):
+    name: Optional[str] = None
+    cpf: Optional[str] = None
+    birth_date: Optional[date] = None
+    city: Optional[str] = None
+    phone: Optional[str] = None
+    health_card_number: Optional[str] = None
 
 class PatientResponse(PatientBase):
     id: int

@@ -5,7 +5,11 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Patient
-from app.schemas import PatientCreate, PatientResponse
+from app.schemas import (
+    PatientCreate,
+    PatientResponse,
+    PatientUpdate
+)
 
 
 router = APIRouter(
@@ -43,7 +47,9 @@ def create_patient(
     )
 
     db.add(db_patient)
+
     db.commit()
+
     db.refresh(db_patient)
 
     return db_patient
@@ -60,9 +66,13 @@ def list_patients(
     query = db.query(Patient)
 
     if city:
-        query = query.filter(Patient.city.ilike(f"%{city}%"))
+        query = query.filter(
+            Patient.city.ilike(f"%{city}%")
+        )
 
-    patients = query.order_by(Patient.created_at.desc().all)
+    patients = query.order_by(
+        Patient.created_at.desc()
+    ).all()
 
     return patients
 
@@ -86,3 +96,73 @@ def get_patient_by_id(
         )
 
     return patient
+
+
+@router.put(
+    "/{patient_id}",
+    response_model=PatientResponse
+)
+def update_patient(
+    patient_id: int,
+    patient_data: PatientUpdate,
+    db: Session = Depends(get_db)
+):
+    patient = db.query(Patient).filter(
+        Patient.id == patient_id
+    ).first()
+
+    if not patient:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Paciente não encontrado."
+        )
+
+    update_data = patient_data.model_dump(
+        exclude_unset=True
+    )
+
+    if "cpf" in update_data:
+        existing_patient = db.query(Patient).filter(
+            Patient.cpf == update_data["cpf"],
+            Patient.id != patient_id
+        ).first()
+
+        if existing_patient:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Já existe outro paciente cadastrado com este CPF."
+            )
+
+    for field, value in update_data.items():
+        setattr(patient, field, value)
+
+    db.commit()
+
+    db.refresh(patient)
+
+    return patient
+
+
+@router.delete(
+    "/{patient_id}",
+    status_code=status.HTTP_204_NO_CONTENT
+)
+def delete_patient(
+    patient_id: int,
+    db: Session = Depends(get_db)
+):
+    patient = db.query(Patient).filter(
+        Patient.id == patient_id
+    ).first()
+
+    if not patient:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Paciente não encontrado."
+        )
+
+    db.delete(patient)
+
+    db.commit()
+
+    return None
