@@ -53,9 +53,15 @@ def create_appointment(
     response_model=List[AppointmentResponse]
 )
 def list_appointments(
+    status: str | None = None,
     db: Session = Depends(get_db)
 ):
-    appointments = db.query(Appointment).order_by(
+    query = db.query(Appointment)
+
+    if status:
+        query = query.filter(Appointment.status == status)
+
+    appointments = query.order_by(
         Appointment.created_at.desc()
     ).all()
 

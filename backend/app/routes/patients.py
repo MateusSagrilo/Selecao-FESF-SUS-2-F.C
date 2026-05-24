@@ -54,9 +54,15 @@ def create_patient(
     response_model=List[PatientResponse]
 )
 def list_patients(
+    city: str | None = None,
     db: Session = Depends(get_db)
 ):
-    patients = db.query(Patient).order_by(Patient.created_at.desc()).all()
+    query = db.query(Patient)
+
+    if city:
+        query = query.filter(Patient.city.ilike(f"%{city}%"))
+
+    patients = query.order_by(Patient.created_at.desc().all)
 
     return patients
 
