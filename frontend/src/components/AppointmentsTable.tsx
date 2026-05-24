@@ -15,12 +15,37 @@ type AppointmentsTableProps = {
   onDataChange?: () => void;
 };
 
+function getStatusLabel(status: Appointment["status"]) {
+  const labels = {
+    pending: "Pendente",
+    in_progress: "Em andamento",
+    completed: "Concluído",
+    cancelled: "Cancelado",
+  };
+
+  return labels[status];
+}
+
+function getStatusClass(status: Appointment["status"]) {
+  const classes = {
+    pending: "bg-yellow-100 text-yellow-800",
+    in_progress: "bg-blue-100 text-blue-800",
+    completed: "bg-green-100 text-green-800",
+    cancelled: "bg-red-100 text-red-800",
+  };
+
+  return classes[status];
+}
+
 export function AppointmentsTable({ onDataChange }: AppointmentsTableProps) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+
   const [patients, setPatients] = useState<Patient[]>([]);
 
   const [loading, setLoading] = useState(true);
+
   const [creating, setCreating] = useState(false);
+
   const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
@@ -39,6 +64,7 @@ export function AppointmentsTable({ onDataChange }: AppointmentsTableProps) {
       ]);
 
       setAppointments(appointmentsData);
+
       setPatients(patientsData);
     } catch {
       setError("Erro ao carregar atendimentos.");
@@ -55,6 +81,7 @@ export function AppointmentsTable({ onDataChange }: AppointmentsTableProps) {
     event.preventDefault();
 
     setCreating(true);
+
     setError("");
 
     try {
@@ -75,6 +102,7 @@ export function AppointmentsTable({ onDataChange }: AppointmentsTableProps) {
       });
 
       await loadData();
+
       onDataChange?.();
     } catch (error) {
       if (error instanceof Error) {
@@ -89,11 +117,13 @@ export function AppointmentsTable({ onDataChange }: AppointmentsTableProps) {
 
   async function handleStatusChange(
     appointmentId: number,
-    status: Appointment["status"]
+    status: Appointment["status"],
   ) {
     try {
       await updateAppointmentStatus(appointmentId, status);
+
       await loadData();
+
       onDataChange?.();
     } catch (error) {
       if (error instanceof Error) {
@@ -125,7 +155,10 @@ export function AppointmentsTable({ onDataChange }: AppointmentsTableProps) {
         <select
           value={formData.patient_id}
           onChange={(event) =>
-            setFormData({ ...formData, patient_id: event.target.value })
+            setFormData({
+              ...formData,
+              patient_id: event.target.value,
+            })
           }
           className="border border-gray-300 rounded-lg px-4 py-2 text-gray-900"
           required
@@ -144,7 +177,10 @@ export function AppointmentsTable({ onDataChange }: AppointmentsTableProps) {
           placeholder="Tipo de atendimento"
           value={formData.service_type}
           onChange={(event) =>
-            setFormData({ ...formData, service_type: event.target.value })
+            setFormData({
+              ...formData,
+              service_type: event.target.value,
+            })
           }
           className="border border-gray-300 rounded-lg px-4 py-2 text-gray-900"
           required
@@ -185,7 +221,10 @@ export function AppointmentsTable({ onDataChange }: AppointmentsTableProps) {
           placeholder="Observações"
           value={formData.notes}
           onChange={(event) =>
-            setFormData({ ...formData, notes: event.target.value })
+            setFormData({
+              ...formData,
+              notes: event.target.value,
+            })
           }
           className="border border-gray-300 rounded-lg px-4 py-2 text-gray-900"
         />
@@ -200,6 +239,8 @@ export function AppointmentsTable({ onDataChange }: AppointmentsTableProps) {
       </form>
 
       {error && <p className="text-red-600 mb-4">{error}</p>}
+
+      {/* MOBILE */}
 
       <div className="md:hidden space-y-4">
         {appointments.map((appointment) => (
@@ -223,12 +264,20 @@ export function AppointmentsTable({ onDataChange }: AppointmentsTableProps) {
               Profissional: {appointment.professional_name}
             </p>
 
+            <span
+              className={`inline-flex mt-3 rounded-full px-3 py-1 text-xs font-semibold ${getStatusClass(
+                appointment.status,
+              )}`}
+            >
+              {getStatusLabel(appointment.status)}
+            </span>
+
             <select
               value={appointment.status}
               onChange={(event) =>
                 handleStatusChange(
                   appointment.id,
-                  event.target.value as Appointment["status"]
+                  event.target.value as Appointment["status"],
                 )
               }
               className="mt-3 w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900"
@@ -242,6 +291,8 @@ export function AppointmentsTable({ onDataChange }: AppointmentsTableProps) {
         ))}
       </div>
 
+      {/* DESKTOP */}
+
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
@@ -249,12 +300,15 @@ export function AppointmentsTable({ onDataChange }: AppointmentsTableProps) {
               <th className="text-left py-3 text-gray-700 font-semibold">
                 Paciente ID
               </th>
+
               <th className="text-left py-3 text-gray-700 font-semibold">
                 Tipo
               </th>
+
               <th className="text-left py-3 text-gray-700 font-semibold">
                 Profissional
               </th>
+
               <th className="text-left py-3 text-gray-700 font-semibold">
                 Status
               </th>
@@ -264,9 +318,7 @@ export function AppointmentsTable({ onDataChange }: AppointmentsTableProps) {
           <tbody>
             {appointments.map((appointment) => (
               <tr key={appointment.id} className="border-b hover:bg-gray-50">
-                <td className="py-3 text-gray-800">
-                  {appointment.patient_id}
-                </td>
+                <td className="py-3 text-gray-800">{appointment.patient_id}</td>
 
                 <td className="py-3 text-gray-800">
                   {appointment.service_type}
@@ -277,21 +329,31 @@ export function AppointmentsTable({ onDataChange }: AppointmentsTableProps) {
                 </td>
 
                 <td className="py-3 text-gray-800">
-                  <select
-                    value={appointment.status}
-                    onChange={(event) =>
-                      handleStatusChange(
-                        appointment.id,
-                        event.target.value as Appointment["status"]
-                      )
-                    }
-                    className="border border-gray-300 rounded-lg px-3 py-1 text-gray-900"
-                  >
-                    <option value="pending">Pendente</option>
-                    <option value="in_progress">Em andamento</option>
-                    <option value="completed">Concluído</option>
-                    <option value="cancelled">Cancelado</option>
-                  </select>
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusClass(
+                        appointment.status,
+                      )}`}
+                    >
+                      {getStatusLabel(appointment.status)}
+                    </span>
+
+                    <select
+                      value={appointment.status}
+                      onChange={(event) =>
+                        handleStatusChange(
+                          appointment.id,
+                          event.target.value as Appointment["status"],
+                        )
+                      }
+                      className="border border-gray-300 rounded-lg px-3 py-1 text-gray-900"
+                    >
+                      <option value="pending">Pendente</option>
+                      <option value="in_progress">Em andamento</option>
+                      <option value="completed">Concluído</option>
+                      <option value="cancelled">Cancelado</option>
+                    </select>
+                  </div>
                 </td>
               </tr>
             ))}
