@@ -11,6 +11,15 @@ export type Patient = {
   created_at: string;
 };
 
+export type CreatePatientData = {
+  name: string;
+  cpf: string;
+  birth_date: string;
+  city: string;
+  phone?: string;
+  health_card_number?: string;
+};
+
 export type Appointment = {
   id: number;
   patient_id: number;
@@ -54,6 +63,24 @@ export async function getAppointments(): Promise<Appointment[]> {
 
   if (!response.ok) {
     throw new Error("Erro ao buscar atendimentos");
+  }
+
+  return response.json();
+}
+
+export async function createPatient(data: CreatePatientData): Promise<Patient> {
+  const response = await fetch(`${API_BASE_URL}/patients/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+
+    throw new Error(errorData.detail || "Erro ao cadastrar paciente");
   }
 
   return response.json();
